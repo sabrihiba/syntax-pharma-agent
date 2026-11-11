@@ -1,5 +1,6 @@
 fastapi 
-uvicorn[standard] //ASGI server
-python-dotenv //For managing environment variables
-httpx //For making HTTP requests
-pytest //For writing tests
+uvicorn[standard] 
+python-dotenv
+httpx 
+pytest
+openai
