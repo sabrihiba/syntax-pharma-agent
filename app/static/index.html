@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pharma Research Assistant</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172b35;
+      --muted: #61757e;
+      --accent: #0f766e;
+      --border: #dce5e8;
+      --surface: #fff;
+      --soft: #f3f7f8;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body {
+      margin: 0;
+      background: #f5f8f9;
+      color: var(--ink);
+      font: 15px/1.65 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, textarea { font: inherit; }
+    a { color: var(--accent); }
+    button, a, textarea { -webkit-tap-highlight-color: transparent; }
+    :focus-visible { outline: 3px solid #5ec7bb; outline-offset: 3px; }
+    .shell { max-width: 1160px; margin: auto; padding: 28px 24px 40px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: -.4px; }
+    .brand-mark {
+      display: grid; place-items: center; width: 40px; height: 40px;
+      border-radius: 12px; color: white; background: var(--accent);
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px; border-radius: 30px;
+      padding: 6px 12px; background: #e8eef0; color: #526871; font-size: 12px;
+    }
+    .badge::before {
+      content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+    }
+    .badge.ready { color: #09675e; background: #e2f3ec; }
+    .badge.busy { color: #8c650c; background: #fff2d5; }
+    .badge.offline { color: #a43c3c; background: #fceaea; }
+    .hero { margin: 42px 0 26px; max-width: 760px; }
+    .eyebrow {
+      color: var(--accent); font-size: 11px; font-weight: 750;
+      letter-spacing: 1.7px; text-transform: uppercase;
+    }
+    h1 {
+      font-size: clamp(30px, 4vw, 43px); line-height: 1.18;
+      letter-spacing: -1.6px; margin: 12px 0 16px;
+    }
+    .hero p { color: var(--muted); font-size: 17px; max-width: 630px; margin: 0; }
+    .workspace, .results-grid {
+      display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 22px;
+    }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 18px; padding: 26px;
+    }
+    .question-card { box-shadow: 0 8px 30px #15384605; }
+    label { display: block; font-weight: 700; font-size: 17px; margin-bottom: 5px; }
+    .hint { color: var(--muted); font-size: 13px; margin: 0 0 15px; }
+    textarea {
+      display: block; width: 100%; min-height: 160px; resize: vertical;
+      border: 1px solid #cbd8dc; border-radius: 12px; padding: 15px;
+      line-height: 1.6; color: var(--ink); background: #fcfefe;
+    }
+    textarea:focus { border-color: var(--accent); outline: 3px solid #0f766e14; }
+    textarea::placeholder { color: #87979e; }
+    textarea:disabled { background: var(--soft); color: var(--muted); }
+    .form-meta, .actions, .result-heading {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    }
+    .form-meta { color: var(--muted); font-size: 12px; margin: 8px 0 19px; }
+    .actions { justify-content: flex-start; }
+    button {
+      border: 0; border-radius: 10px; padding: 11px 18px;
+      font-weight: 650; cursor: pointer;
+    }
+    .primary { color: white; background: var(--accent); }
+    .primary:hover:not(:disabled) { background: #095e58; }
+    .secondary { color: var(--muted); background: var(--soft); }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+    .about h2 { margin: 0 0 18px; font-size: 16px; }
+    .feature { padding: 13px 0; border-top: 1px solid var(--border); }
+    .feature strong { display: block; font-size: 13px; }
+    .feature p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .corpus-label { margin-top: 19px; color: var(--muted); font-size: 11px; }
+    .progress {
+      display: flex; align-items: center; gap: 12px; padding: 16px 20px;
+      margin-top: 20px; color: #145e58; background: #eaf6f2;
+      border: 1px solid #cce5dc; border-radius: 12px;
+    }
+    .progress small { display: block; color: var(--muted); }
+    .spinner {
+      width: 20px; height: 20px; border: 2px solid #b5d9ce;
+      border-top-color: var(--accent); border-radius: 50%;
+      flex-shrink: 0; animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error {
+      margin-top: 20px; padding: 16px 20px; border: 1px solid #e9bcbc;
+      border-radius: 12px; color: #8c3030; background: #fff4f4;
+    }
+    .empty {
+      margin-top: 24px; text-align: center; color: var(--muted);
+      padding: 35px 20px; border: 1px dashed #cbd8dc; border-radius: 15px;
+    }
+    .empty strong { display: block; color: #415c66; margin-bottom: 4px; }
+    .empty p { margin: 0; font-size: 13px; }
+    #results { margin-top: 30px; scroll-margin-top: 20px; }
+    .result-heading { margin-bottom: 15px; align-items: flex-start; }
+    .result-heading h2 { margin: 0; font-size: 23px; letter-spacing: -.5px; }
+    .meta { color: var(--muted); font-size: 12px; margin: 3px 0 0; }
+    .outcome {
+      border-radius: 6px; padding: 4px 9px; color: #09675e;
+      background: #e2f3ec; font-size: 11px; white-space: nowrap;
+    }
+    .outcome.incomplete { color: #825c12; background: #fff2d5; }
+    .results-grid.single { grid-template-columns: 1fr; }
+    .answer { overflow-wrap: anywhere; }
+    .answer p { margin: 0 0 15px; white-space: pre-wrap; }
+    .answer ul { padding-left: 21px; margin: 0 0 20px; }
+    .answer li { padding-left: 3px; margin-bottom: 12px; }
+    .answer h3 { font-size: 14px; margin: 24px 0 10px; }
+    .citation {
+      display: inline-block; text-decoration: none; font-size: 11px;
+      font-weight: 750; padding: 0 5px; border-radius: 4px;
+      background: #e7f3f0; vertical-align: baseline;
+    }
+    .sources-heading { margin: 0 0 15px; font-size: 15px; }
+    .source {
+      border: 1px solid var(--border); border-radius: 11px; padding: 14px;
+      margin-top: 11px; overflow-wrap: anywhere; scroll-margin-top: 24px;
+    }
+    .source:target { border-color: var(--accent); box-shadow: 0 0 0 3px #0f766e12; }
+    .source-ref { font-size: 11px; font-weight: 750; color: var(--accent); }
+    .source-title { display: block; margin: 4px 0; line-height: 1.45; font-size: 13px; }
+    .source-origin { color: var(--muted); margin: 4px 0 9px; font-size: 11px; }
+    .source a { font-size: 12px; font-weight: 650; text-underline-offset: 3px; }
+    .trace { margin-top: 20px; }
+    .trace > summary { cursor: pointer; font-weight: 650; }
+    .trace-body { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 17px; }
+    .trace-body h3 { font-size: 14px; margin: 20px 0 9px; }
+    .trace-body ol, .trace-body ul { padding-left: 22px; }
+    .trace-body li { margin-bottom: 7px; }
+    .tool {
+      border: 1px solid var(--border); padding: 11px 13px;
+      border-radius: 9px; margin-bottom: 8px;
+    }
+    .tool summary { cursor: pointer; font-size: 13px; }
+    pre {
+      white-space: pre-wrap; overflow-wrap: anywhere; background: var(--soft);
+      padding: 13px; border-radius: 8px; font: 12px/1.6 ui-monospace, monospace;
+    }
+    .trace-note {
+      color: var(--muted); font-size: 13px; white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    footer { margin-top: 30px; color: var(--muted); font-size: 11px; line-height: 1.8; }
+    @media (max-width: 800px) {
+      .workspace, .results-grid { grid-template-columns: 1fr; }
+      .about { display: none; }
+      .hero { margin-top: 32px; }
+      .card { padding: 20px; }
+    }
+    @media (max-width: 480px) {
+      .shell { padding: 20px 15px 30px; }
+      .brand { font-size: 13px; }
+      .badge { padding: 5px 8px; font-size: 10px; }
+      .result-heading { flex-wrap: wrap; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .spinner { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none">
+            <path d="M4 5h6a3 3 0 0 1 3 3v12a4 4 0 0 0-4-2H4V5Zm16 0h-4a3 3 0 0 0-3 3v12a4 4 0 0 1 4-2h3V5Z"
+              stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        Pharma Research Assistant
+      </div>
+      <span id="connection" class="badge" role="status">Checking connection</span>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <span class="eyebrow">Pharmacology research</span>
+        <h1 id="page-title">Ask about medicines.<br>See the evidence.</h1>
+        <p>Explore your question with referenced answers and a research trace you can inspect.</p>
+      </section>
+
+      <div class="workspace">
+        <section class="card question-card">
+          <form id="question-form">
+            <label for="question">What would you like to know?</label>
+            <p id="question-help" class="hint">
+              Include the medicine, the topic, and any relevant details.
+            </p>
+            <textarea
+              id="question"
+              name="question"
+              required
+              maxlength="4000"
+              aria-describedby="question-help character-count"
+              placeholder="Ask about contraindications, interactions, monitoring, or precautions…"></textarea>
+
+            <div class="form-meta">
+              <span>Ctrl / ⌘ + Enter to submit</span>
+              <span id="character-count">0 / 4000</span>
+            </div>
+
+            <div class="actions">
+              <button id="submit-button" class="primary" type="submit" disabled>
+                Ask question
+              </button>
+              <button id="clear-button" class="secondary" type="button">
+                Clear
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <aside class="card about" aria-label="About the assistant">
+          <h2>Evidence you can follow</h2>
+          <div class="feature">
+            <strong>Referenced answers</strong>
+            <p>Follow citations back to the source documents.</p>
+          </div>
+          <div class="feature">
+            <strong>Evidence checks</strong>
+            <p>See which sections were read and reviewed.</p>
+          </div>
+          <div class="feature">
+            <strong>Research trace</strong>
+            <p>Inspect the plan, tool calls, and review outcomes.</p>
+          </div>
+          <div class="corpus-label">
+            Local corpus · DailyMed · MedlinePlus
+          </div>
+        </aside>
+      </div>
+
+      <div id="progress" class="progress" role="status" hidden>
+        <span class="spinner" aria-hidden="true"></span>
+        <div>
+          Gathering evidence and reviewing the answer…
+          <small>
+            This may take a minute or more.
+            <span id="elapsed" aria-hidden="true"></span>
+          </small>
+        </div>
+      </div>
+
+      <div
+        id="error"
+        class="error"
+        role="alert"
+        tabindex="-1"
+        hidden></div>
+
+      <div id="empty" class="empty">
+        <strong>Your research starts with a question</strong>
+        <p>Your answer, sources, and research steps will appear here.</p>
+      </div>
+
+      <section id="results" aria-labelledby="answer-title" hidden>
+        <div class="result-heading">
+          <div>
+            <h2 id="answer-title" tabindex="-1">Answer</h2>
+            <p id="result-meta" class="meta"></p>
+          </div>
+          <span id="outcome" class="outcome"></span>
+        </div>
+
+        <div id="results-grid" class="results-grid">
+          <article id="answer" class="card answer"></article>
+
+          <aside id="sources-panel" class="card" aria-label="Source references">
+            <h3 class="sources-heading">Sources</h3>
+            <div id="sources"></div>
+          </aside>
+        </div>
+
+        <details id="trace-panel" class="card trace">
+          <summary>Explore research trace</summary>
+          <div id="trace" class="trace-body"></div>
+        </details>
+      </section>
+    </main>
+
+    <footer>
+      <span id="disclaimer">For educational purposes only. This is not medical advice; consult a qualified healthcare professional for individual care.</span>
+    </footer>
+  </div>
+
+  <script>
+    "use strict";
+
+    const $ = (id) => document.getElementById(id);
+    const form = $("question-form");
+    const question = $("question");
+    const submit = $("submit-button");
+    const clear = $("clear-button");
+    const errorBox = $("error");
+
+    let busy = false;
+    let healthReady = false;
+
+    function node(tag, text, className) {
+      const element = document.createElement(tag);
+      if (text !== undefined) element.textContent = String(text);
+      if (className) element.className = className;
+      return element;
+    }
+
+    function list(value) {
+      return Array.isArray(value) ? value : [];
+    }
+
+    function safeSourceURL(value) {
+      if (typeof value !== "string") return null;
+
+      try {
+        const url = new URL(value);
+        return ["http:", "https:"].includes(url.protocol)
+          ? url.href
+          : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function connection(text, state = "") {
+      $("connection").textContent = text;
+      $("connection").className = "badge " + state;
+    }
+
+    async function checkHealth() {
+      try {
+        const response = await fetch("/health", {
+          cache: "no-store"
+        });
+        const data = await response.json();
+
+        healthReady = response.ok && data.ready === true;
+
+        if (!busy) {
+          connection(
+            healthReady ? "Assistant ready" : "Assistant not ready",
+            healthReady ? "ready" : "offline"
+          );
+        }
+      } catch {
+        healthReady = false;
+        if (!busy) connection("Connection unavailable", "offline");
+      }
+    }
+
+    function updateForm() {
+      $("character-count").textContent =
+        question.value.length + " / 4000";
+
+      submit.disabled = busy || !question.value.trim();
+      clear.disabled = busy;
+      question.disabled = busy;
+      submit.textContent = busy ? "Researching…" : "Ask question";
+    }
+
+    function inlineText(parent, text, references) {
+      const pattern = /\[(S[1-9]\d*)\]/g;
+      let start = 0;
+
+      for (const match of text.matchAll(pattern)) {
+        parent.append(
+          document.createTextNode(
+            text.slice(start, match.index)
+          )
+        );
+
+        const reference = match[1];
+
+        if (references.has(reference)) {
+          const link = node(
+            "a",
+            match[0],
+            "citation"
+          );
+
+          link.href = "#source-" + reference;
+          link.setAttribute(
+            "aria-label",
+            "Go to source " + reference
+          );
+
+          parent.append(link);
+        } else {
+          parent.append(
+            document.createTextNode(match[0])
+          );
+        }
+
+        start = match.index + match[0].length;
+      }
+
+      parent.append(
+        document.createTextNode(text.slice(start))
+      );
+    }
+
+    function renderAnswer(text, references) {
+      const box = $("answer");
+      box.replaceChildren();
+
+      let currentList = null;
+
+      for (const rawLine of text.split(/\r?\n/)) {
+        const line = rawLine.trim();
+
+        if (!line) {
+          currentList = null;
+          continue;
+        }
+
+        if (line.startsWith("- ")) {
+          if (!currentList) {
+            currentList = node("ul");
+            box.append(currentList);
+          }
+
+          const item = node("li");
+
+          inlineText(
+            item,
+            line.slice(2),
+            references
+          );
+
+          currentList.append(item);
+        } else {
+          currentList = null;
+
+          const isHeading = [
+            "Sources:",
+            "Evidence limitations:"
+          ].includes(line);
+
+          const paragraph = node(
+            isHeading ? "h3" : "p"
+          );
+
+          inlineText(
+            paragraph,
+            line,
+            references
+          );
+
+          box.append(paragraph);
+        }
+      }
+    }
+
+    function renderSources(citations) {
+      const box = $("sources");
+      box.replaceChildren();
+
+      const references = new Set();
+
+      for (const citation of citations) {
+        if (!citation || typeof citation !== "object") continue;
+
+        const reference = citation.reference;
+
+        if (
+          typeof reference !== "string"
+          || !/^S[1-9]\d*$/.test(reference)
+        ) continue;
+
+        if (references.has(reference)) continue;
+
+        references.add(reference);
+
+        const card = node(
+          "div",
+          undefined,
+          "source"
+        );
+
+        card.id = "source-" + reference;
+        card.tabIndex = -1;
+
+        card.append(
+          node("span", reference, "source-ref")
+        );
+
+        card.append(
+          node(
+            "strong",
+            citation.section_path || citation.label || citation.file,
+            "source-title"
+          )
+        );
+
+        card.append(
+          node(
+            "p",
+            [
+              citation.source_label,
+              citation.file
+            ].filter(Boolean).join(" · "),
+            "source-origin"
+          )
+        );
+
+        const url = safeSourceURL(citation.url);
+
+        if (url) {
+          const link = node("a", "Open source ↗");
+          link.href = url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          card.append(link);
+        }
+
+        box.append(card);
+      }
+
+      return references;
+    }
+
+    function renderTrace(trace, status) {
+      const box = $("trace");
+      box.replaceChildren();
+
+      box.append(
+        node(
+          "p",
+          "Final status: " + status,
+          "trace-note"
+        )
+      );
+
+      const plan = list(trace.plan);
+
+      if (plan.length) {
+        box.append(node("h3", "Research plan"));
+
+        const items = node("ol");
+
+        for (const step of plan) {
+          items.append(node("li", step));
+        }
+
+        box.append(items);
+      }
+
+      const calls = list(trace.tool_calls);
+
+      if (calls.length) {
+        box.append(node("h3", "Tool calls"));
+
+        calls.forEach((call, index) => {
+          const names = {
+            search_corpus: "Search corpus",
+            get_section: "Read section"
+          };
+
+          const label =
+            names[call.name] || call.name || "Tool";
+
+          const outcome = !call.ok
+            ? "failed"
+            : call.delivered
+              ? "delivered"
+              : "not delivered";
+
+          const detail = node(
+            "details",
+            undefined,
+            "tool"
+          );
+
+          detail.append(
+            node(
+              "summary",
+              (index + 1) + ". " + label + " · " + outcome
+            )
+          );
+
+          detail.append(
+            node(
+              "pre",
+              typeof call.arguments === "string"
+                ? call.arguments
+                : JSON.stringify(call.arguments, null, 2)
+            )
+          );
+
+          box.append(detail);
+        });
+      }
+
+      const evidence = list(trace.evidence);
+
+      if (evidence.length) {
+        box.append(node("h3", "Retrieved evidence"));
+
+        const items = node("ul");
+
+        for (const item of evidence) {
+          items.append(
+            node(
+              "li",
+              (item.section_path || item.section_id)
+                + " — "
+                + (item.complete ? "complete section" : "partial evidence")
+                + (item.file ? " · " + item.file : "")
+            )
+          );
+        }
+
+        box.append(items);
+      }
+
+      for (const [key, title] of [
+        ["evidence_reviews", "Evidence reviews"],
+        ["answer_reviews", "Answer reviews"]
+      ]) {
+        const reviews = list(trace[key]);
+
+        if (!reviews.length) continue;
+
+        box.append(node("h3", title));
+
+        reviews.forEach((review, index) => {
+          box.append(
+            node(
+              "p",
+              "Review "
+                + (index + 1)
+                + ": "
+                + (review.sufficient ? "passed" : "needs follow-up"),
+              "trace-note"
+            )
+          );
+
+          const issues = list(review.issues);
+
+          if (issues.length) {
+            const items = node("ul");
+
+            for (const issue of issues) {
+              items.append(node("li", issue));
+            }
+
+            box.append(items);
+          }
+        });
+      }
+
+      if (list(trace.rejected_batches).length) {
+        box.append(
+          node("h3", "Rejected tool-call batches")
+        );
+        box.append(
+          node(
+            "pre",
+            JSON.stringify(
+              trace.rejected_batches,
+              null,
+              2
+            )
+          )
+        );
+      }
+
+      if (trace.notes) {
+        box.append(
+          node("p", trace.notes, "trace-note")
+        );
+      }
+
+      box.append(
+        node(
+          "p",
+          "Answer revisions: " + (trace.revisions ?? 0),
+          "trace-note"
+        )
+      );
+    }
+
+    function answerBody(data) {
+      // Remove only the exact source footer already shown in source cards.
+      // Unexpected formatting falls back to displaying the complete answer.
+      const citations = list(data.citations);
+
+      if (
+        !citations.length
+        || typeof data.disclaimer !== "string"
+      ) {
+        return data.answer;
+      }
+
+      const footer =
+        "\n\nSources:\n"
+        + citations.map((citation) =>
+            "- [" + citation.reference + "] " + citation.label
+          ).join("\n")
+        + "\n\n"
+        + data.disclaimer;
+
+      return data.answer.endsWith(footer)
+        ? data.answer.slice(0, -footer.length)
+        : data.answer;
+    }
+
+    function renderResult(data) {
+      if (!data || typeof data.status !== "string") {
+        throw new Error(
+          "The server returned an unexpected response."
+        );
+      }
+
+      const approved =
+        data.status === "answer_reviewed";
+
+      const citations = list(data.citations);
+
+      if (
+        approved
+        && (
+          typeof data.answer !== "string"
+          || !data.answer.trim()
+          || !citations.length
+        )
+      ) {
+        throw new Error(
+          "The reviewed response is missing its answer or source references."
+        );
+      }
+
+      const trace =
+        data.trace && typeof data.trace === "object"
+          ? data.trace
+          : {};
+
+      const references = renderSources(citations);
+
+      if (approved && !references.size) {
+        throw new Error(
+          "The response contains no readable source references."
+        );
+      }
+
+      $("answer-title").textContent =
+        approved ? "Answer" : "Research incomplete";
+
+      $("outcome").textContent =
+        approved ? "Source review passed" : "No reviewed answer";
+
+      $("outcome").className =
+        "outcome" + (approved ? "" : " incomplete");
+
+      $("sources-panel").hidden = !approved;
+      $("results-grid").classList.toggle(
+        "single",
+        !approved
+      );
+
+      if (approved) {
+        renderAnswer(
+          answerBody(data),
+          references
+        );
+      } else {
+        $("answer").replaceChildren(
+          node(
+            "p",
+            "The research did not produce an approved answer. "
+              + "Open the research trace to see the remaining gaps."
+          )
+        );
+      }
+
+      const seconds = Number.isFinite(trace.elapsed_ms)
+        ? (trace.elapsed_ms / 1000).toFixed(1) + " seconds"
+        : "";
+
+      $("result-meta").textContent = [
+        approved
+          ? references.size + " source references"
+          : "Status: " + data.status,
+        seconds
+      ].filter(Boolean).join(" · ");
+
+      if (
+        typeof data.disclaimer === "string"
+        && data.disclaimer.trim()
+      ) {
+        $("disclaimer").textContent =
+          data.disclaimer;
+      }
+
+      renderTrace(trace, data.status);
+
+      $("trace-panel").open = !approved;
+      $("results").hidden = false;
+
+      $("answer-title").focus({
+        preventScroll: true
+      });
+
+      $("results").scrollIntoView({
+        behavior: window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        ).matches ? "auto" : "smooth",
+        block: "start"
+      });
+    }
+
+    function responseError(data, status) {
+      if (typeof data?.detail === "string") {
+        return data.detail;
+      }
+
+      if (Array.isArray(data?.detail)) {
+        return data.detail.map(
+          (item) => item.msg || "Invalid request"
+        ).join("; ");
+      }
+
+      return (
+        "The request could not be completed (HTTP "
+        + status
+        + ")."
+      );
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      if (busy) return;
+
+      const value = question.value.trim();
+
+      if (!value || value.length > 4000) {
+        errorBox.textContent =
+          "Enter a question containing 1 to 4000 characters.";
+        errorBox.hidden = false;
+        return;
+      }
+
+      busy = true;
+      updateForm();
+      connection("Researching", "busy");
+
+      errorBox.hidden = true;
+      $("results").hidden = true;
+      $("empty").hidden = true;
+      $("progress").hidden = false;
+      $("elapsed").textContent = "0s elapsed";
+
+      const started = Date.now();
+
+      const timer = window.setInterval(() => {
+        $("elapsed").textContent =
+          Math.floor(
+            (Date.now() - started) / 1000
+          ) + "s elapsed";
+      }, 1000);
+
+      try {
+        const response = await fetch("/ask", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({
+            question: value
+          })
+        });
+
+        let data;
+
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error(
+            "The server returned an unreadable response."
+          );
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            responseError(data, response.status)
+          );
+        }
+
+        renderResult(data);
+
+      } catch (error) {
+        errorBox.textContent =
+          error instanceof TypeError
+            ? "Could not reach the assistant. Check that the server is running, then try again."
+            : error.message || "The request could not be completed.";
+
+        errorBox.hidden = false;
+        $("empty").hidden = false;
+        errorBox.focus();
+
+      } finally {
+        window.clearInterval(timer);
+        $("progress").hidden = true;
+        busy = false;
+        updateForm();
+
+        connection(
+          healthReady ? "Assistant ready" : "Connection not confirmed",
+          healthReady ? "ready" : "offline"
+        );
+      }
+    });
+
+    question.addEventListener(
+      "input",
+      updateForm
+    );
+
+    question.addEventListener("keydown", (event) => {
+      if (
+        (event.ctrlKey || event.metaKey)
+        && event.key === "Enter"
+      ) {
+        event.preventDefault();
+
+        if (!busy) {
+          form.requestSubmit();
+        }
+      }
+    });
+
+    clear.addEventListener("click", () => {
+      question.value = "";
+      updateForm();
+      question.focus();
+    });
+
+    updateForm();
+    checkHealth();
+  </script>
+</body>
+</html>
