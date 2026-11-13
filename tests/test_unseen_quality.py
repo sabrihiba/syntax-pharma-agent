@@ -181,7 +181,7 @@ CASES = (
                 (
                     r"acetaminophen",
                     r"other|another|multiple",
-                    r"do not|should not|must not|avoid|not use|not take|not be",
+                    r"do not|should not|must not|avoid|not (?:to )?(?:use|take|be)",
                 ),
                 (ACET,),
             ),
@@ -431,3 +431,4 @@ def test_live_unavailable_drug_is_not_released(service):
         match="No reviewed answer",
     ):
         result.to_markdown()
+        

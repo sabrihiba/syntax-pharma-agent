@@ -300,3 +300,10 @@ review, and the complete answer workflow. Live checks make API requests.
 - When sufficient evidence cannot be established, the workflow may stop
   without releasing a reviewed answer.
 - Answers must not be used as individualized medical advice.
+## AI-assisted development
+
+See [AI_ASSISTANCE.md] for the assistance used and
+the configuration timeline.
+
+[AGENTS.md] contains coding-assistant instructions added
+during project finalization.
