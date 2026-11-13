@@ -1,0 +1,24 @@
+name: syntax-pharma-agent
+
+services:
+  pharma:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: syntax-pharma-agent:local
+
+    env_file:
+      - .env
+
+    ports:
+      - "127.0.0.1:8000:8000"
+
+    volumes:
+      - embedding_cache:/app/.cache/embeddings
+
+    init: true
+    restart: "no"
+    stop_grace_period: 90s
+
+volumes:
+  embedding_cache:
