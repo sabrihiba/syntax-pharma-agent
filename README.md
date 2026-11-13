@@ -307,3 +307,38 @@ the configuration timeline.
 
 [AGENTS.md] contains coding-assistant instructions added
 during project finalization.
+### Persistent container with a fixed name
+
+Create the container once:
+
+```bash
+docker run -d --name pharma-agent -p 8000:8000 --env-file .env --mount type=volume,source=syntax-pharma-agent_embedding_cache,target=/app/.cache/embeddings agent
+```
+
+The named volume persists the embedding cache. Its first initialization
+still requires access to the configured embedding provider.
+
+Follow startup logs:
+
+```bash
+docker logs -f pharma-agent
+```
+
+Wait for `Application startup complete`, then open http://localhost:8000.
+Press Ctrl+C to leave the logs without stopping the container.
+
+Stop and restart the existing container:
+
+```bash
+docker stop pharma-agent
+docker start pharma-agent
+```
+
+Do not repeat `docker run` when the container already exists.
+Docker Desktop's Start/Stop buttons can also be used.
+
+Run only one deployment on host port 8000 at a time.
+
+Rebuilding the image does not update an existing container. After code or
+dependency changes, recreate the container from the rebuilt image.
+The named embedding-cache volume can be reused.
